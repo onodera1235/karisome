@@ -444,7 +444,10 @@ function indiNoticeMSG(){
 			"<td style = 'color:blue;' onClick = 'indiNotice()'><br>注意事項等（Precautions）</td>" +
 		"</tr>" +
 		"<tr>" +
-			"<td style = 'color:blue;'><br><a href = './blog/' target = '_blanc'>開発者ブログ</a></td>" +
+			"<td><br><a href = './blog/' target = '_blanc'>開発者ブログ</a></td>" +
+		"</tr>" +
+		"<tr>" +
+			"<td><br><a href = 'https://github.com/onodera1235/karisome' target = '_blanc'>GitHub</a></td>" +
 		"</tr>" +
 	"</table>"; 
 	document.getElementById("dom3").innerHTML = notice;
