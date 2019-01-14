@@ -10,7 +10,7 @@ Swetake's library : QRcode Perl/CGI & PHP scripts var. 0.50（ http://www.swetak
 かりそめ（仮初め）<br>
 QRコードでペアリングするSNSです。<br>
 ユーザー登録などは不要です。<br>
-日本時間の０時を経過した後の最初のペアリングが成立した時点で、共有情報やデータが消去される仕様にしています。
+日本時間の０時を経過した後の最初のペアリングが成立した時点で、共有情報やデータが消去される仕様にしています。<br>
 カレントディレクトリの中に"files","hash","log","user"の４つのカラのフォルダを作成する必要があります。<br>
 同じくカレントディレクトリの中に"qr"のフォルダを作り、その中にQRコードのライブラリを置く必要があります。<br>
 ライブラリはswetakeさんのQRcode Perl/CGI & PHP scripts var. 0.50（ http://www.swetake.com/qrcode/qr_cgi.html ）を使わせてもらっています。
