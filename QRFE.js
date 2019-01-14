@@ -419,7 +419,7 @@ function indiQR(){
 							"<td class = 'backC'>Code Key：" + QRHash + "</td>" +
 						"</tr>" +
 						"<tr>" +
-							"<td class = 'backC' style = 'color:#0066cc;' onClick = 'indiInputCodeKeyForm()'>Code Keyでペアリング（Connect by typing Code Key）</td>" +
+							"<td class = 'backC' style = 'color:#0066cc;' onClick = 'indiInputCodeKeyForm()'>Code Keyでペアリング（Connect by Code Key）</td>" +
 						"</tr>" +
 					"</table>" +
 				"</td>" +
