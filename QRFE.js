@@ -415,6 +415,12 @@ function indiQR(){
 				"<td>" +
 					"<table border = '0' class = 'back3'>" +
 						"<tr>" + QR + "</tr>" +
+						"<tr>" +
+							"<td class = 'backC'>Code Key：" + QRHash + "</td>" +
+						"</tr>" +
+						"<tr>" +
+							"<td class = 'backC' style = 'color:#0066cc;' onClick = 'indiInputCodeKeyForm()'>Code Keyでペアリング（Connect by typing Code Key）</td>" +
+						"</tr>" +
 					"</table>" +
 				"</td>" +
 			"</tr>" +
@@ -431,6 +437,48 @@ function indiQR(){
 }
 
 //--------------------------------------------------------------------------
+//　　　　コードキーを手入力するフォームを表示させる関数
+//--------------------------------------------------------------------------
+function indiInputCodeKeyForm(){
+	var inputCodeKeyForm =
+	"<table class = 'backC'>" +
+		"<tr>" +
+			"<td class = 'col2C'>Code Key</td>" +
+			"<td class = 'row3C'><input type = 'text' name = 'codeKey' class = 'inputL'></td>" +
+			"<td class = 'row3C'><input type = 'button' value = 'Pairing' onClick = 'sendCodeKey()' class = 'btn1'></td>" +
+			"<td class = 'row3C'><input type = 'button' value = 'Cancel' onClick = 'clearDom2()' class = 'btn1'></td>" +
+		"</tr>" +
+	"</table>";
+	document.getElementById("dom2").innerHTML = inputCodeKeyForm;
+}
+
+//--------------------------------------------------------------------------
+//　　　　コードキーを手入力しぺリングさせるときの処理
+//--------------------------------------------------------------------------
+function sendCodeKey(){
+	var inputCodeKey = document.forms["domForm"].elements["codeKey"].value;
+	if(QRHash == inputCodeKey || oldQRHash == inputCodeKey){
+		alert("自分とのペアリングはできません。\nCan't connect with yourself!");
+	}else if(inputCodeKey == ""){
+		alert("Code Keyが入力されていません。\nNo Code Key!");
+	}else{
+		document.forms["domForm"].elements["digit"].value = "getPair";
+		document.forms["domForm"].elements["hash"].value = inputCodeKey;
+		var target = document.getElementById("dom_php");
+		target.action = "./QRFE.php";
+		target.method = "get";
+		target.submit();
+	}
+}
+
+//--------------------------------------------------------------------------
+//　　　　dom2を消す関数
+//--------------------------------------------------------------------------
+function clearDom2(){
+	document.getElementById("dom2").innerHTML = "";
+}
+
+//--------------------------------------------------------------------------
 //　　　　注意事項等への誘導メッセージなどを表示させる関数
 //--------------------------------------------------------------------------
 function indiNoticeMSG(){
@@ -438,10 +486,10 @@ function indiNoticeMSG(){
 	var notice =
 	"<table>" +
 		"<tr>" +
-			"<td style = 'color:blue;' onClick = 'indiManual()'>使い方（How to use）</td>" +
+			"<td style = 'color:#0066cc;' onClick = 'indiManual()'>使い方（How to use）</td>" +
 		"</tr>" +
 		"<tr>" +
-			"<td style = 'color:blue;' onClick = 'indiNotice()'><br>注意事項等（Precautions）</td>" +
+			"<td style = 'color:#0066cc;' onClick = 'indiNotice()'><br>注意事項等（Precautions）</td>" +
 		"</tr>" +
 		"<tr>" +
 			"<td><br><a href = './blog/' target = '_blanc'>開発者ブログ</a></td>" +
