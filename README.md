@@ -1,3 +1,4 @@
+<img src = "https://github.com/onodera1235/karisome/blob/master/apple-touch-icon.png">
 【English】<br>
 "# karisome"<br>
 Social network connected by QR-Code.<br>
