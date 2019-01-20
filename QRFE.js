@@ -98,6 +98,8 @@ function phpOpen(){
 		}
 	}else if(digit === "addQR"){
 		if(returnMSG === "addQROk"){
+			// ペアリングが成立したらQRHashをローカルに保存
+			saveQRLocal();
 			reLoadSubmit(); // 二重送信による多重登録防止のためにすぐに再読込させる（再読込ならその後二重送信されてもOK）
 		}else if(returnMSG === "doubleCheck"){
 			reLoadSubmit(); // それでも二重送信された場合は、もう一度カラサブミット
