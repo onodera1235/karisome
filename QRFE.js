@@ -1,8 +1,11 @@
 ﻿//--------------------------------------------------------------------------
 //　　　　グローバル変数・オブジェクト
 //--------------------------------------------------------------------------
-var testMode = "off"; // on or off
+var testMode = "on"; // on or off
+
+var codeKey;
 var digit;
+var oldCodeKey;
 var oldQRCode;
 var oldQRHash;
 //var position;
@@ -40,6 +43,7 @@ function phpOpen(){
 	digit = obj["digit"];
 	returnMSG = obj["returnMSG"];
 	QRHash = obj["QRHash"];
+	codeKey = obj["codeKey"];
 	tmpId = obj["tmpId"];
 	tmpIdArray = obj["tmpIdArray"];
 	meetingObj = obj["meetingObj"];
@@ -50,21 +54,20 @@ function phpOpen(){
 		"digit:" + digit +
 		"<br>returnMSG:" + returnMSG +
 		"<br>QRHash:" + QRHash +
+		"<br>codeKey:" + codeKey +
 		"<br>tmpId:" + tmpId +
 		"<br>tmpIdArray:" + JSON.stringify(tmpIdArray) +
 		"<br>meetingObj:" + JSON.stringify(meetingObj);
-	
+		
 		document.getElementById("testConsol").innerHTML = "【テスト中】<br>テスト用コンソールを表示中です。<br>" + testConsol;
 	}
 	
 	indiTitleBar();
 	indiMyMessage();
-	
 	if(digit == "getPair"){
 		if(returnMSG === "QRLoginOk"){
 			// ペアリングが成立したらQRHashをローカルに保存
 			saveQRLocal();
-			
 			indiMain();
 		}else if(returnMSG === "doubleCheck"){
 			alert("二重送信と判定されました。");
@@ -96,6 +99,8 @@ function phpOpen(){
 	}else if(digit === "addQR"){
 		if(returnMSG === "addQROk"){
 			reLoadSubmit(); // 二重送信による多重登録防止のためにすぐに再読込させる（再読込ならその後二重送信されてもOK）
+		}else if(returnMSG === "doubleCheck"){
+			reLoadSubmit(); // それでも二重送信された場合は、もう一度カラサブミット
 		}else if(returnMSG === "noFile"){
 			document.getElementById("dom1").innerHTML =
 			"<table>" +
@@ -112,13 +117,18 @@ function phpOpen(){
 		}else if(returnMSG == "nothingMeetingFile"){
 			indiMain();
 		}
+	}else if(digit === "getPairByCodeKey"){
+		if(returnMSG === "codeKeyError"){
+			alert("コードキーが違うかタイムオーバーです。\nCode key Error or Time over !");
+			htmlOpen();
+		}
 	}else{
 //		alert("ログインしていません");
 		document.getElementById("titleBar").innerHTML = "";
 		document.getElementById("dom1").innerHTML = "";
 		document.getElementById("dom2").innerHTML = "";
 		document.getElementById("dom3").innerHTML = "";
-
+		
 		htmlOpen();
 	}
 }
@@ -141,6 +151,8 @@ function ajax(obj){
 		QRCode = data["QRCode"];
 		QRHash = data["QRHash"];
 		oldQRHash = data["oldQRHash"];
+		codeKey = data["codeKey"];
+		oldCodeKey = data["oldCodeKey"];
 		tmpId = data["tmpId"];
 		tmpIdArray = data["tmpIdArray"];
 		meetingObj = data["meetingObj"];
@@ -165,13 +177,15 @@ function ajaxOpen(){
 		"digit:" + digit +
 		"<br>returnMSG:" + returnMSG +
 		"<br>QRCode:" + QRCode +
+		"<br>oldQRCode:" + oldQRCode +
+		"<br>codeKey:" + codeKey +
+		"<br>oldCodeKey:" + oldCodeKey +
 		"<br>QRHash:" + QRHash +
 		"<br>oldQRHash:" + oldQRHash +
 		"<br>tmpId:" + tmpId +
 		"<br>tmpIdArray:" + JSON.stringify(tmpIdArray) +
 		"<br>oldMeetingObj:" + JSON.stringify(oldMeetingObj) +
-		"<br>meetingObj:" + JSON.stringify(meetingObj) +
-		"<br>oldQRCode:" + oldQRCode;
+		"<br>meetingObj:" + JSON.stringify(meetingObj);
 		
 		document.getElementById("testConsol").innerHTML = "【テスト中】<br>テスト用コンソールを表示中です。<br>" + indiTest;
 	}
@@ -263,8 +277,9 @@ function indiTitleBar(){
 		if(tmpIdArray){
 			var tmpIdCount = tmpIdArray.length;
 			for(var i = 0;i < tmpIdCount;i++){
-				if(Object.keys(tmpIdArray[i]) == tmpId){
-					var indiName = tmpIdArray[i][tmpId];
+				var targetObj = tmpIdArray[i];
+				if(Object.keys(targetObj)[0] == tmpId){
+					var indiName = targetObj[tmpId];
 					break;
 				}
 			}
@@ -313,8 +328,9 @@ function changeName(){
 	
 	var tmpIdCount = tmpIdArray.length;
 	for(var i = 0;i < tmpIdCount;i++){
-		if(Object.keys(tmpIdArray[i]) == tmpId){
-			var indiName = tmpIdArray[i][tmpId];
+		var targetObj = tmpIdArray[i];
+		if(Object.keys(targetObj)[0] == tmpId){
+			var indiName = targetObj[tmpId];
 			break;
 		}
 	}
@@ -354,8 +370,9 @@ function changeName(){
 function doChangeName(){
 	var tmpIdCount = tmpIdArray.length;
 	for(var i = 0;i < tmpIdCount;i++){
-		if(Object.keys(tmpIdArray[i]) == tmpId){
-			var indiName = tmpIdArray[i][tmpId];
+		var targetObj = tmpIdArray[i];
+		if(Object.keys(targetObj)[0] == tmpId){
+			var indiName = targetObj[tmpId];
 			break;
 		}
 	}
@@ -373,6 +390,7 @@ function doChangeName(){
 		obj["tmpId"] = tmpId;
 		obj["newName"] = newName;
 		obj["QRHash"] = QRHash;
+		obj["codeKey"] = codeKey;
 		ajax(obj);
 	}
 }
@@ -380,11 +398,11 @@ function doChangeName(){
 //--------------------------------------------------------------------------
 //　　　　ＱＲコードを表示させる関数
 //--------------------------------------------------------------------------
-function indiQR(){
+function indiQR(i){ // i=1ならコードキー手入力フォームからの戻り
 	
 	indiTitleBar();
 	
-	if(oldQRCode != QRCode){ // 画面のちらつきを抑えるため、ＱＲコードが更新になっているときだけここを通過（１分間隔）
+	if(oldQRCode != QRCode || i == 1){ // 画面のちらつきを抑えるため、ＱＲコードが更新になっているときだけここを通過（１分間隔）
 		if(testMode == "on"){
 			var QR = "<td class = 'backC'><a href = './QRFE.php?digit=getPair&hash=" + QRHash + "' target = '_blanc'><img src = '" + QRCode + "' alt = 'ＱＲコード'></a></td>";
 		}else if(testMode == "off"){
@@ -416,9 +434,6 @@ function indiQR(){
 					"<table border = '0' class = 'back3'>" +
 						"<tr>" + QR + "</tr>" +
 						"<tr>" +
-							"<td class = 'backC'>Code Key：" + QRHash + "</td>" +
-						"</tr>" +
-						"<tr>" +
 							"<td class = 'backC' style = 'color:#0066cc;' onClick = 'indiInputCodeKeyForm()'>Code Keyでペアリング（Connect by Code Key）</td>" +
 						"</tr>" +
 					"</table>" +
@@ -432,24 +447,46 @@ function indiQR(){
 		"</table>"; 
 		document.getElementById("dom1").innerHTML = msg;
 	}
-	
-	indiNoticeMSG();
+	if(i != 1){
+		indiNoticeMSG();
+	}
 }
 
 //--------------------------------------------------------------------------
 //　　　　コードキーを手入力するフォームを表示させる関数
 //--------------------------------------------------------------------------
 function indiInputCodeKeyForm(){
+	
+//	clearTimeout(indiQRTimer);
+	
 	var inputCodeKeyForm =
 	"<table class = 'backC'>" +
 		"<tr>" +
-			"<td class = 'col2C'>Code Key</td>" +
-			"<td class = 'row3C'><input type = 'text' name = 'codeKey' class = 'inputL'></td>" +
-			"<td class = 'row3C'><input type = 'button' value = 'Pairing' onClick = 'sendCodeKey()' class = 'btn1'></td>" +
-			"<td class = 'row3C'><input type = 'button' value = 'Cancel' onClick = 'clearDom2()' class = 'btn1'></td>" +
+			"<td>" +
+				"<table class = 'backL'>" +
+					"<tr>" +
+						"<td class = 'title'>Code Key：" + codeKey + "</td>" +
+					"</tr>" +
+					"<tr>" +
+						"<td>このCode Keyを相手に教えて端末に入力してもらうか、相手の端末に表示されているCode Keyを下のフォームに入力し「Pairing」ボタンを押してください。</td>" +
+					"</tr>" +
+				"</table>" +
+			"</td>" +
+		"</tr>" +
+		"<tr>" +
+			"<td>" +
+				"<table class = 'backC'>" +
+					"<tr>" +
+						"<td class = 'col2C'>Code Key</td>" +
+						"<td class = 'row3C'><input type = 'text' name = 'codeKey' class = 'inputL'></td>" +
+						"<td class = 'row3C'><input type = 'button' value = 'Pairing' onClick = 'sendCodeKey()' class = 'btn1'></td>" +
+						"<td class = 'row3C'><input type = 'button' value = 'Cancel' onClick = 'indiQR(1)' class = 'btn1'></td>" +
+					"</tr>" +
+				"</table>" +
+			"</td>" +
 		"</tr>" +
 	"</table>";
-	document.getElementById("dom2").innerHTML = inputCodeKeyForm;
+	document.getElementById("dom1").innerHTML = inputCodeKeyForm;
 }
 
 //--------------------------------------------------------------------------
@@ -457,25 +494,18 @@ function indiInputCodeKeyForm(){
 //--------------------------------------------------------------------------
 function sendCodeKey(){
 	var inputCodeKey = document.forms["domForm"].elements["codeKey"].value;
-	if(QRHash == inputCodeKey || oldQRHash == inputCodeKey){
+	if(codeKey == inputCodeKey || oldCodeKey == inputCodeKey){
 		alert("自分とのペアリングはできません。\nCan't connect with yourself!");
 	}else if(inputCodeKey == ""){
 		alert("Code Keyが入力されていません。\nNo Code Key!");
 	}else{
-		document.forms["domForm"].elements["digit"].value = "getPair";
+		document.forms["domForm"].elements["digit"].value = "getPairByCodeKey";
 		document.forms["domForm"].elements["hash"].value = inputCodeKey;
 		var target = document.getElementById("dom_php");
 		target.action = "./QRFE.php";
 		target.method = "get";
 		target.submit();
 	}
-}
-
-//--------------------------------------------------------------------------
-//　　　　dom2を消す関数
-//--------------------------------------------------------------------------
-function clearDom2(){
-	document.getElementById("dom2").innerHTML = "";
 }
 
 //--------------------------------------------------------------------------
@@ -486,7 +516,7 @@ function indiNoticeMSG(){
 	var notice =
 	"<table>" +
 		"<tr>" +
-			"<td style = 'color:#0066cc;' onClick = 'indiManual()'>使い方（How to use）</td>" +
+			"<td style = 'color:#0066cc;' onClick = 'indiManual()'><br>使い方（How to use）</td>" +
 		"</tr>" +
 		"<tr>" +
 			"<td style = 'color:#0066cc;' onClick = 'indiNotice()'><br>注意事項等（Precautions）</td>" +
@@ -788,6 +818,8 @@ function reLoadQR(){
 	obj["digit"] = "reLoadQR";
 	obj["QRHash"] = QRHash;
 	obj["oldQRHash"] = oldQRHash;
+	obj["codeKey"] = codeKey;
+	obj["oldCodeKey"] = oldCodeKey;
 	ajax(obj);
 }
 
@@ -798,6 +830,7 @@ function callAddQR(){
 	clearTimeout(meetingTimer);
 	obj["digit"] = "callAddQR";
 	obj["QRHash"] = QRHash;
+	obj["codeKey"] = codeKey;
 	ajax(obj);
 }
 
@@ -822,7 +855,7 @@ function indiAddQR(){
 							"<td class = 'grayText'>Read QR-Code to add member</td>" +
 						"</tr>" +
 						"<tr>" +
-							"<td class = 'subTitle'>メンバー追加したい端末でＱＲコードを読み取って下さい。</td>" +
+							"<td class = 'subTitle'>メンバー追加したい端末でＱＲコードを読み取るか、Code Keyを入力して下さい。</td>" +
 						"</tr>" +
 					"</table>" +
 				"</td>" +
@@ -831,6 +864,9 @@ function indiAddQR(){
 				"<td>" +
 					"<table border = '0' class = 'back3'>" +
 						"<tr>" + QR +"</tr>" +
+						"<tr>" +
+							"<td class = 'titleC'>Code Key:" + codeKey + "</td>" +
+						"</tr>" +
 						"<tr>" +
 							"<td class = 'backC'><input type = 'button' value = '×' onClick = 'delQR()' class = 'btn5'></td>" +
 						"</tr>" +
@@ -888,6 +924,9 @@ function indiMain(k,l){
 		var oldMeetingStr = JSON.stringify(oldMeetingObj);
 		var meetingStr = JSON.stringify(meetingObj);
 		if((oldMeetingStr != meetingStr) || digit == "reLogin"){
+			
+			var tmpIdCount = tmpIdArray.length;
+			
 			var innerArea =
 				"<table class = 'back2'>" +
 					"<tr>" +
@@ -895,11 +934,11 @@ function indiMain(k,l){
 					"</tr>" +
 				"</table>";
 			
+			var inner = "";
 			if(meetingObj && meetingObj["record"]){
 				var recordArray = meetingObj["record"];
 				var recordCount = recordArray.length;
 				if(recordCount > 0){
-					var inner = "";
 					for(var i = recordCount - 1;i >= 0;i--){
 						var recordObj = recordArray[i];
 						var targetId = recordObj["tmpId"];
@@ -951,10 +990,10 @@ function indiMain(k,l){
 							"</table><br>";
 						}else{
 							// 自分以外の投稿
-							var tmpIdCount = tmpIdArray.length;
 							for(var j = 0;j < tmpIdCount;j++){
-								if(Object.keys(tmpIdArray[j]) == targetId){
-									var indiName = tmpIdArray[j][targetId];
+								var targetObj = tmpIdArray[j];
+								if(Object.keys(targetObj)[0] == targetId){
+									var indiName = targetObj[targetId];
 									break;
 								}
 							}
@@ -986,24 +1025,30 @@ function indiMain(k,l){
 							"</table><br>";
 						}
 					}
-				}else{
-					var inner =
-					"<table>" +
-						"<tr>" +
-							"<td class = 'grayText'>Code Key : " + QRHash + "</td>" +
-						"</tr>" +
-					"</table>";
 				}
-			}else{
-				var inner =
-				"<table>" +
-					"<tr>" +
-						"<td class = 'grayText'>Code Key : " + QRHash + "</td>" +
-					"</tr>" +
-				"</table>";
 			}
 			
-			document.getElementById("dom2").innerHTML = innerArea;
+			// ログインしている人の情報
+			var memberInfo =
+			"<table>" +
+				"<tr>" +
+					"<td class = 'title'>参加者（Member）</td>" +
+				"</tr>" +
+			"</table>" +
+			"<table>";
+			for(var i = 0;i < tmpIdCount;i++){
+				var targetObj = tmpIdArray[i];
+				var innerKey = Object.keys(targetObj)[0];
+				var member = targetObj[innerKey];
+				memberInfo = memberInfo +
+				"<tr>" +
+					"<td>" + member + "</td>" +
+				"</tr>";
+			}
+			memberInfo = memberInfo +
+			"</table>";
+			
+			document.getElementById("dom2").innerHTML = innerArea + memberInfo;
 			document.getElementById("innerArea").innerHTML = inner;
 //			document.getElementById("innerArea").scrollTop = position;
 		}
@@ -1047,6 +1092,7 @@ function reLoadMeeting(){
 	obj["tmpId"] = tmpId;
 //	obj["position"] = position;
 	obj["QRHash"] = QRHash;
+	obj["codeKey"] = codeKey;
 	ajax(obj);
 }
 
@@ -1099,6 +1145,7 @@ function delMSG(i){
 //	obj["position"] = position;
 	obj["targetHash"] = targetHash;
 	obj["QRHash"] = QRHash;
+	obj["codeKey"] = codeKey;
 	ajax(obj);
 }
 
@@ -1130,6 +1177,7 @@ function submitPhp(){ // user1（QRコードを表示した側）がQRコード�
 	obj["digit"] = "submitPhp";
 	obj["tmpId"] = tmpId;
 	obj["QRHash"] = QRHash;
+	obj["codeKey"] = codeKey;
 	send(obj);
 }
 
@@ -1137,6 +1185,7 @@ function reLoadSubmit(){ // ３人目以降の追加メンバーが登録操作�
 	obj["digit"] = "reLoadSubmit";
 	obj["tmpId"] = tmpId;
 	obj["QRHash"] = QRHash;
+	obj["codeKey"] = codeKey;
 	send(obj);
 }
 
@@ -1223,8 +1272,17 @@ function indiReLoginCode(){
 			var MM = dateObj.getMonth() + 1;
 			var DD = dateObj.getDate();
 			var hh = dateObj.getHours();
+			if(hh < 10){
+				hh = "0" + hh;
+			}
 			var mm = dateObj.getMinutes();
+			if(mm < 10){
+				mm = "0" + mm;
+			}
 			var ss = dateObj.getSeconds();
+			if(ss < 10){
+				ss = "0" + ss;
+			}
 			var timeStamp = YYYY + "-" + MM + "-" + DD + "　" + hh + ":" + mm + ":" + ss;
 			var code = savedQRHashArray[i][1];
 			tmpId = savedQRHashArray[i][2];
@@ -1247,7 +1305,7 @@ function indiReLoginCode(){
 		"</table>";
 		document.getElementById("dom1").innerHTML = title + subTitle + inner + btn;
 	}else{
-		alert("保存されているコードキーがありません。\n Code Key is not saved");
+		alert("保存されているコードキーがありません。\n Code key is not saved");
 	}
 }
 
@@ -1272,6 +1330,7 @@ function reLogin(i){ // iはコードキーの数
 			obj["digit"] = "reLogin";
 			obj["tmpId"] = tmpId;
 			obj["QRHash"] = targetCode;
+			obj["codeKey"] = codeKey;
 			ajax(obj);
 			
 			check = 1;
@@ -1279,7 +1338,7 @@ function reLogin(i){ // iはコードキーの数
 		}
 	}
 	if(check == 0){
-		alert("コードキーが選択されていません。\n Select Code Key !");
+		alert("コードキーが選択されていません。\n Select code key !");
 	}
 }
 

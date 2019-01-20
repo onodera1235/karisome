@@ -88,29 +88,105 @@
 		}else{
 			$digit = '';
 		}
-		if($digit == 'getPair'){
-			// 二重送信を防ぐ（同じQRHashのtmpIdArrayが存在していれば二重送信）
-			$filename_idArray = './user/'.$QRHash.'.txt';
-			$idStr = loadFile($filename_idArray);
-			if(isset($idStr) == true){
-				$returnMSG = 'doubleCheck';
-				$tmpId = 'user2'; // ここに来るということは多分user2
+		$codeKey = '';
+		// コードキーを入力してきた場合の特殊処理（最初のペアリングか既にペアリングが成立している場合の追加かで処理が分かれる）
+		if($digit == 'getPairByCodeKey'){
+			$codeKey = $QRHash;
+			
+			$filename_list = './files/list.txt';
+			$listStr = loadFile($filename_list);
+			if(isset($listStr)){
+				// listに保存されているかを確認
+				$listArray = json_decode($listStr,true);
+				$listCount = count($listArray);
+				$check = 0;
+				for($i = 0;$i < $listCount;$i++){
+					if($listArray[$i][2] == $codeKey){
+						$targetArray = $listArray[$i];
+						$QRHash = $targetArray[1];
+						$filename_idArray = './user/'.$QRHash.'.txt';
+						$idStr = loadFile($filename_idArray);
+						if(isset($idStr)){
+							// ペアリング成立済み
+							$digit = 'addQR';
+							$check = 1;
+							break;
+						}
+					}
+				}
 			}else{
+				// listがない場合
+				$check = 0;
+			}
+			
+			if($check == 0){
+				// ペアリングが成立していないので、
+				// QRHashにあるかどうかを探す
 				$filename_QRHash = './hash/QRHash.txt';
-				$filename_list = './files/list.txt';
 				$QRHashStr = loadFile($filename_QRHash);
 				if(isset($QRHashStr)){
 					$QRHashArray = json_decode($QRHashStr,true);
 					$QRHashCount = count($QRHashArray);
-					$returnMSG = 'noHash';
+					for($i = 0;$i < $QRHashCount;$i++){
+						if($QRHashArray[$i][2] == $codeKey){
+							$targetArray = $QRHashArray[$i];
+							$QRHash = $targetArray[1];
+							$digit = 'getPair';
+							$check = 1;
+							break;
+						}
+					}
+				}
+				if($check == 0){
+					// oldQRHashにあるかどうかを探す
+					$filename_oldQRHash = './hash/oldHash.txt';
+					$oldQRHashStr = loadFile($filename_oldQRHash);
+					if(isset($oldQRHashStr)){
+						$oldQRHashArray = json_decode($oldQRHashStr,true);
+						$oldQRHashCount = count($oldQRHashArray);
+						for($i = 0;$i < $oldQRHashCount;$i++){
+							if($oldQRHashArray[$i][2] == $codeKey){
+								$targetArray = $oldQRHashArray[$i];
+								$QRHash = $targetArray[1];
+								$digit = 'getPair';
+								$check = 1;
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+		
+		if($digit == 'getPairByCodeKey'){
+			if($check == 0){
+				// 最終的に見つからなかった場合
+				$returnMSG = 'codeKeyError';
+				$tmpId = '';
+			}
+		}else if($digit == 'getPair'){
+			// 二重送信を防ぐ（同じQRHashのtmpIdArrayが存在していれば二重送信）
+			$filename_idArray = './user/'.$QRHash.'.txt';
+			$idStr = loadFile($filename_idArray);
+			$filename_list = './files/list.txt';
+			if(isset($idStr) == true){
+				$returnMSG = 'doubleCheck';
+				$tmpId = 'user2'; // ここに来るということはuser2（ペアリングが成立していない状態の初めてのユーザー）
+			}else{
+				$returnMSG = 'noHash';
+				$filename_QRHash = './hash/QRHash.txt';
+				$QRHashStr = loadFile($filename_QRHash);
+				$listStr = loadFile($filename_list);
+				if(isset($listStr)){
+					$listArray = json_decode($listStr,true);
+				}else{
+					$listArray = array();
+				}
+				if(isset($QRHashStr)){
+					$QRHashArray = json_decode($QRHashStr,true);
+					$QRHashCount = count($QRHashArray);
 					for($i = 0;$i < $QRHashCount;$i++){
 						if($QRHashArray[$i][1] === $QRHash){
-							$listStr = loadFile($filename_list);
-							if(isset($listStr)){
-								$listArray = json_decode($listStr,true);
-							}else{
-								$listArray = array();
-							}
 							$targetArray = $QRHashArray[$i];
 							$targetArray[0] = getToday(); // タイムスタンプを更新（YYYY-MM-DD）
 							$listArray[] = $targetArray;
@@ -129,8 +205,6 @@
 							break;
 						}
 					}
-				}else{
-					$returnMSG = 'noHash';
 				}
 				
 				// 結果がタイムオーバーで'noHash'となったときにoldHashを探しに行く
@@ -142,17 +216,11 @@
 						$oldHashCount = count($oldHashArray);
 						for($i = 0;$i < $oldHashCount;$i++){
 							if($oldHashArray[$i][1] == $QRHash){
-								$listStr = loadFile($filename_list);
-								if(isset($listStr)){
-									$listArray = json_decode($listStr,true);
-								}else{
-									$listArray = array();
-								}
 								$targetArray = $oldHashArray[$i];
 								$targetArray[0] = getToday(); // タイムスタンプを更新（YYYY-MM-DD）
 								$listArray[] = $targetArray;
 								$listStr = json_encode($listArray);
-								// $listを保存**********************************************************************
+								// $listを保存*********************************************************************
 								saveFile($listStr,$filename_list,'w');
 								// ********************************************************************************
 								
@@ -171,9 +239,26 @@
 				if($returnMSG == 'QRLoginOk'){
 					// tmpIdArrayを作成・保存
 					$tmpId = 'user2'; // QRコードを読み取った側
-					$tmpIdArray = array(array('user2' => $tmpId));
+					$tmpIdArray =
+					array(
+						array(
+							'user2' => $tmpId,
+							'ipAddress' => $ipAddress
+						)
+					);
 					$tmpIdStr = json_encode($tmpIdArray);
 					saveFile($tmpIdStr,$filename_idArray,'w');
+					
+					// codeKeyを探し出して返す
+					$listCount = count($listArray);
+					for($i = 0;$i < $listCount;$i++){
+						if($listArray[$i][1] == $QRHash){
+							$codeKey = $listArray[$i][2];
+							break;
+						}
+					}
+				}else{
+					$tmpId = '';
 				}
 			}
 			
@@ -183,12 +268,28 @@
 			if(isset($tmpIdStr) === true){
 				$tmpIdArray = json_decode($tmpIdStr,true);
 				$tmpIdCount = count($tmpIdArray);
-				$tmpId = 'user'.($tmpIdCount + 1);
-				$innerArray = array($tmpId => $tmpId);
-				$tmpIdArray[] = $innerArray;
-				$tmpIdStr = json_encode($tmpIdArray);
-				saveFile($tmpIdStr,$filename_idArray,'w');
-				$returnMSG = 'addQROk';
+				// 同じipAddressからの送信でないかをチェック（二重登録防止）
+				for($i = 0;$i < $tmpIdCount;$i++){
+					$targetObj = $tmpIdArray[$i];
+					$savedIpAddress = $targetObj['ipAddress'];
+					if($savedIpAddress == $ipAddress){
+						$returnMSG = 'doubleCheck';
+						$tmpId = 'user2';
+						break;
+					}
+				}
+				if($returnMSG != 'doubleCheck'){
+					$tmpId = 'user'.($tmpIdCount + 1);
+					$innerArray =
+					array(
+						$tmpId => $tmpId,
+						'ipAddress' => $ipAddress
+					);
+					$tmpIdArray[] = $innerArray;
+					$tmpIdStr = json_encode($tmpIdArray);
+					saveFile($tmpIdStr,$filename_idArray,'w');
+					$returnMSG = 'addQROk';
+				}
 			}else{
 				$returnMSG = 'noFile';
 				$tmpId = '';
@@ -204,6 +305,7 @@
 			'digit' => $digit,
 			'returnMSG' => $returnMSG,
 			'QRHash' => $QRHash,
+			'codeKey' => $codeKey,
 			'tmpId' => $tmpId
 		);
 	}
@@ -220,6 +322,9 @@
 		}
 		if(isset($obj['QRHash'])){
 			$QRHash = $obj['QRHash'];
+		}
+		if(isset($obj['codeKey'])){
+			$codeKey = $obj['codeKey'];
 		}
 		if(isset($obj['tmpId'])){
 			$tmpId = $obj['tmpId'];
@@ -425,6 +530,8 @@
 
 <body class = "body" onLoad = "phpOpen()">
 <form name = "domForm" id = "dom_php" enctype = "multipart/form-data" onsubmit = "return false">
+ <input type = "hidden" name = "digit">
+ <input type = "hidden" name = "hash">
  <input type = "hidden" name = "str1" value = '<?php echo $str1; ?>'>
   <table class = "barBack">
   <tr>

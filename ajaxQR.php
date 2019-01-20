@@ -1,4 +1,10 @@
 ﻿<?php
+	
+	//**************************************************************************************************
+	// テストモードの切り替え
+		$testMode = 'on'; // on or off
+	//**************************************************************************************************
+	
 	//----------------------------------------------------------------
 	//　　　　ユーザー定義関数
 	//----------------------------------------------------------------
@@ -75,6 +81,8 @@
 		$digit = filter_input(INPUT_POST, 'digit');
 		$QRHash = filter_input(INPUT_POST, 'QRHash');
 		$oldQRHash = filter_input(INPUT_POST, 'oldQRHash');
+		$codeKey = filter_input(INPUT_POST, 'codeKey');
+		$oldCodeKey = filter_input(INPUT_POST, 'oldCodeKey');
 		$tmpId = filter_input(INPUT_POST, 'tmpId');
 		$newName = filter_input(INPUT_POST, 'newName');
 //		$position = filter_input(INPUT_POST, 'position');
@@ -86,10 +94,29 @@
 		if($digit === 'makeQR'){
 			// 一世代前のQRHashをoldQRHashとして引き継ぐ
 			$oldQRHash = $QRHash;
+			$oldCodeKey = $codeKey;
 			// 新たなQRHashを生成
 			$rand = mt_rand();
 			$baseText = rawurlencode($rand.$timeStamp.'私は小野寺昭生です');
 			$QRHash = hash('md5',$baseText);
+			$codeKey = floor(hexdec($QRHash)/3403000000000000000000000000000);
+			if($codeKey < 1){
+				$codeKey = '00000000'.$codeKey;
+			}else if($codeKey < 10){
+				$codeKey = '0000000'.$codeKey;
+			}else if($codeKey < 100){
+				$codeKey = '000000'.$codeKey;
+			}else if($codeKey < 1000){
+				$codeKey = '00000'.$codeKey;
+			}else if($codeKey < 10000){
+				$codeKey = '0000'.$codeKey;
+			}else if($codeKey < 100000){
+				$codeKey = '000'.$codeKey;
+			}else if($codeKey < 1000000){
+				$codeKey = '00'.$codeKey;
+			}else if($codeKey < 10000000){
+				$codeKey = '0'.$codeKey;
+			}
 			$filename_QRHash = './hash/QRHash.txt';
 			$savedHashStr = loadFile($filename_QRHash);
 			if(isset($savedHashStr)){
@@ -112,6 +139,7 @@
 			$innerArray = array();
 			$innerArray[] = time(); // ログイン処理が中断されるとごみが残るので一定時間を超えたら消去するためのタイムスタンプ
 			$innerArray[] = $QRHash;
+			$innerArray[] = $codeKey;
 			$savedHashArray[] = $innerArray;
 			$savedHashStr = json_encode($savedHashArray);
 			saveFile($savedHashStr,$filename_QRHash,'w');
@@ -140,8 +168,11 @@
 			$savedOldHashArray[] = $innerArray;
 			$savedOldHashStr = json_encode($savedOldHashArray);
 			saveFile($savedOldHashStr,$filename_oldHash,'w');
-			
-			$url = 'https://karisome.info/QRFE.php?digit=getPair&hash='.$QRHash;
+			if($testMode == 'on'){
+				$url = 'http:onodera1235.php.xdomain.jp/karisome/QRFE.php?digit=getPair&hash='.$QRHash;
+			}else if($testMode == 'off'){
+				$url = 'https://karisome.info/QRFE.php?digit=getPair&hash='.$QRHash;
+			}
 			$qr_text = urlencode($url);
 			$QRCode = './qr/php/qr_img.php?d='.$qr_text.'&t=J&s=4';
 			$returnMSG = 'makeQROk';
@@ -172,7 +203,11 @@
 					for($i = 0;$i < $savedHashCount;$i++){
 						$targetHash = $savedHashArray[$i][1];
 						if($targetHash === $QRHash){
-							$url = 'https://karisome.info/QRFE.php?digit=getPair&hash='.$QRHash;
+							if($testMode == 'on'){
+								$url = 'http:onodera1235.php.xdomain.jp/karisome/QRFE.php?digit=getPair&hash='.$QRHash;
+							}else if($testMode == 'off'){
+								$url = 'https://karisome.info/QRFE.php?digit=getPair&hash='.$QRHash;
+							}
 							$qr_text = urlencode($url);
 							$QRCode = './qr/php/qr_img.php?d='.$qr_text.'&t=J&s=4';
 							$returnMSG = 'reLoadQROk'; // ここを通過すれば$returnMSGが書き換わる
@@ -212,9 +247,11 @@
 				$check = 0;
 				for($i = 0;$i < $listCount;$i++){
 					if($listArray[$i][1] === $QRHash){
+						$codeKey = $listArray[$i][2];
 						$check = 1;
 					}else if($listArray[$i][1] === $oldQRHash){ // 一世代前のＱＲコードでもＯＫとする
 						$QRHash = $oldQRHash;
+						$codeKey = $listArray[$i][2];
 						$check = 2;
 					}
 					if($check == 1 || $check == 2){
@@ -229,7 +266,11 @@
 						}else{
 							$tmpIdarray = array();
 						}
-						$tmpArray = array('user1' => 'user1');
+						$tmpArray =
+						array(
+							'user1' => 'user1',
+							'ipAddress' => $ipAddress
+						);
 						$tmpIdArray[] = $tmpArray;
 						$tmpIdStr = json_encode($tmpIdArray);
 						saveFile($tmpIdStr,$filename_idArray,'w');
@@ -310,7 +351,11 @@
 				}
 			}
 		}else if($digit === 'callAddQR'){
-			$url = 'https://karisome.info/QRFE.php?digit=addQR&hash='.$QRHash;
+			if($testMode == 'on'){
+				$url = 'http:onodera1235.php.xdomain.jp/karisome/QRFE.php?digit=addQR&hash='.$QRHash;
+			}else if($testMode == 'off'){
+				$url = 'https://karisome.info/QRFE.php?digit=addQR&hash='.$QRHash;
+			}
 			$qr_text = urlencode($url);
 			$QRCode = './qr/php/qr_img.php?d='.$qr_text.'&t=J&s=4';
 			$returnMSG = 'callAddQROk';
@@ -343,6 +388,23 @@
 			}else{
 				$returnMSG = 'noId';
 			}
+			if($returnMSG != 'noId'){
+				// codeKeyを探して返す
+				$filename_list = './files/list.txt';
+				$listStr = loadFile($filename_list);
+				if(isset($listStr) === true){
+					$listArray = json_decode($listStr,true);
+					$listCount = count($listArray);
+					for($i = 0;$i < $listCount;$i++){
+						if($listArray[$i][1] == $QRHash){
+							$codeKey = $listArray[$i][2];
+							break;
+						}
+					}
+				}
+			}else{
+				$codeKey = '';
+			}
 		}
 		
 		// 常時
@@ -363,6 +425,12 @@
 		}
 		if(isset($oldQRHash)){
 			$obj['oldQRHash'] = $oldQRHash;
+		}
+		if(isset($codeKey)){
+			$obj['codeKey'] = $codeKey;
+		}
+		if(isset($oldCodeKey)){
+			$obj['oldCodeKey'] = $oldCodeKey;
 		}
 		if(isset($tmpId)){
 			$obj['tmpId'] = $tmpId;
