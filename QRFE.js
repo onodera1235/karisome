@@ -414,16 +414,15 @@ function indiQR(i){ // i=1ならコードキー手入力フォームからの戻
 				"<td>" +
 					"<table class = 'back3'>" +
 						"<tr>" +
-							"<td class = 'title'>撮った写真をその場で共有</td>" +
+							"<td class = 'title'>QRコードでペアリング</td>" +
 						"</tr>" +
 						"<tr>" +
 							"<td class = 'grayText'>Read QR-Code to connect with this device.</td>" +
 						"</tr>" +
 						"<tr>" +
-							"<td class = 'subTitle'>" +
-							"<br>「写真をシェアしたいけどSNSアカウントは教えたくない」というときに便利<br>" +
-							"QRコードを別のスマホなどで読み取るだけでペアリングが完了します<br>" +
-							"ペアリングは一晩で解消されるので、気軽につながることができます" +
+							"<td class = 'subTitle'><br>" +
+							"ペアリング相手と写真などのデータを共有<br>" +
+							"ペアリングは一晩で解消されるので、気軽につながってＯＫ" +
 							"</td>" +
 						"</tr>" +
 					"</table>" +
