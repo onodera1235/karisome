@@ -468,7 +468,7 @@ function indiInputCodeKeyForm(){
 						"<td class = 'title'>Code Key：" + codeKey + "</td>" +
 					"</tr>" +
 					"<tr>" +
-						"<td>このCode Keyを相手に教えて端末に入力してもらうか、相手の端末に表示されているCode Keyを下のフォームに入力し「Pairing」ボタンを押してください。</td>" +
+						"<td>このCode Keyをペアリングしたい相手の端末に入力してください。</td>" +
 					"</tr>" +
 				"</table>" +
 			"</td>" +
