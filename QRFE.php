@@ -269,7 +269,7 @@
 				$tmpIdArray = json_decode($tmpIdStr,true);
 				$tmpIdCount = count($tmpIdArray);
 				// 同じipAddressからの送信でないかをチェック（二重登録防止）
-				for($i = 0;$i < $tmpIdCount;$i++){
+/*				for($i = 0;$i < $tmpIdCount;$i++){
 					$targetObj = $tmpIdArray[$i];
 					$savedIpAddress = $targetObj['ipAddress'];
 					if($savedIpAddress == $ipAddress){
@@ -278,7 +278,7 @@
 						break;
 					}
 				}
-				if($returnMSG != 'doubleCheck'){
+*/				if($returnMSG != 'doubleCheck'){
 					$tmpId = 'user'.($tmpIdCount + 1);
 					$innerArray =
 					array(

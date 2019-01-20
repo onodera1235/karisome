@@ -1,7 +1,7 @@
 ﻿//--------------------------------------------------------------------------
 //　　　　グローバル変数・オブジェクト
 //--------------------------------------------------------------------------
-var testMode = "on"; // on or off
+var testMode = "off"; // on or off
 
 var codeKey;
 var digit;
@@ -421,8 +421,7 @@ function indiQR(i){ // i=1ならコードキー手入力フォームからの戻
 						"</tr>" +
 						"<tr>" +
 							"<td class = 'subTitle'><br>" +
-							"ペアリング相手と写真などのデータを共有<br>" +
-							"ペアリングは一晩で解消されるので、気軽につながってＯＫ" +
+							"写真などの共有やチャットができます" +
 							"</td>" +
 						"</tr>" +
 					"</table>" +
@@ -433,7 +432,7 @@ function indiQR(i){ // i=1ならコードキー手入力フォームからの戻
 					"<table border = '0' class = 'back3'>" +
 						"<tr>" + QR + "</tr>" +
 						"<tr>" +
-							"<td class = 'backC' style = 'color:#0066cc;' onClick = 'indiInputCodeKeyForm()'>Code Keyでペアリング（Connect by Code Key）</td>" +
+							"<td class = 'backC' style = 'color:blue;' onClick = 'indiInputCodeKeyForm()'>Code Keyでペアリング（Connect by Code Key）</td>" +
 						"</tr>" +
 					"</table>" +
 				"</td>" +
@@ -515,10 +514,10 @@ function indiNoticeMSG(){
 	var notice =
 	"<table>" +
 		"<tr>" +
-			"<td style = 'color:#0066cc;' onClick = 'indiManual()'><br>使い方（How to use）</td>" +
+			"<td style = 'color:blue;' onClick = 'indiManual()'><br>使い方（How to use）</td>" +
 		"</tr>" +
 		"<tr>" +
-			"<td style = 'color:#0066cc;' onClick = 'indiNotice()'><br>注意事項等（Precautions）</td>" +
+			"<td style = 'color:blue;' onClick = 'indiNotice()'><br>注意事項等（Precautions）</td>" +
 		"</tr>" +
 		"<tr>" +
 			"<td><br><a href = './blog/' target = '_blanc'>開発者ブログ</a></td>" +
