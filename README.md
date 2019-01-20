@@ -1,4 +1,10 @@
-<img src = "https://github.com/onodera1235/karisome/blob/master/apple-touch-icon.png">
+<table>
+  <tr>
+    <td><img src = "https://github.com/onodera1235/karisome/blob/master/apple-touch-icon.png"></td>
+    <td><img src = "https://karisome.info/qr/qr_karisome.png"></td>
+  </tr>
+ </table>
+  
 【English】<br>
 "# karisome"<br>
 Social network connected by QR-Code.<br>
